@@ -1,6 +1,8 @@
+#pragma once
 #include "httpServer.hpp"
 
 #include <iostream>
+#include <map>
 #include <string>
 
 const int16_t port = 8080;

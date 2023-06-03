@@ -1,9 +1,13 @@
+#pragma once
 #include <netinet/in.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
+#include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "protocol.hpp"
 
@@ -58,10 +62,58 @@ class httpServer {
     if (n > 0) {
       buf[n] = 0;
       std::cout << buf << std::endl;
-      // Request req;
-      // req.Parse(buf);
+      Request req;
+      req.Parse(buf);
+      Response resp;
+      conversion(req, resp);
+      std::string resp_str;
+      resp.Serialize(&resp_str);
+      send(sockfd, resp_str.c_str(), resp_str.size(), 0);
     }
+    close(sockfd);
     pthread_exit(nullptr);
+  }
+
+  static std::string getMIME(const std::string &suffix) {
+    if (suffix == ".html") return "text/html";
+    if (suffix == ".jpg") return "application/x-jpg;image/jpeg";
+    if (suffix == ".png") return "application/x-png;image/png";
+    if (suffix == ".ico") return "application/x-ico;image/x-icon;";
+    return "text/html";
+  }
+
+  static bool readFile(const std::string &url, std::string *output) {
+    *output = "";
+    std::ifstream in(url, std::ios::binary);
+    if (!in.is_open()) return false;
+    in.seekg(0, std::ios::end);
+    std::streampos fileSize = in.tellg();
+    in.seekg(0, std::ios::beg);
+    std::vector<char> buffer(fileSize);
+    in.read(buffer.data(), fileSize);
+    (*output) = buffer.data();
+    in.close();
+    return true;
+  }
+
+  static void conversion(const Request &req, Response &resp) {
+    std::cout << "-----------------------" << std::endl;
+    std::cout << req.method << "---" << req.path << "---" << req.version
+              << "---" << req.url << "---" << req.suffix << std::endl;
+    //////////////////////////////////////////////////////////////////////////////////////
+    resp.version = "HTTP/1.1";
+    resp.status = "200";
+    resp.reason = "OK";
+    resp.headers = "Content-Type: " + getMIME(req.suffix) + sep;
+    if (!readFile(req.url, &resp.body)) {
+      readFile(page_404, &resp.body);
+    }
+    resp.headers += "Content-Length: " + std::to_string(resp.body.size()) + sep;
+    //////////////////////////////////////////////////////////////////////////////////////
+    std::cout << resp.version << "---" << resp.status << "---" << resp.reason
+              << "---" << resp.headers << "---" << resp.body.size()
+              << std::endl;
+    std::cout << "-----------------------" << std::endl;
   }
 
  private:
