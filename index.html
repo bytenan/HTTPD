@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Page C</title>
+    <title>Page Not Found</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         * {
@@ -32,9 +32,15 @@
             font-weight: 400;
         }
 
+        p {
+            margin: 0 auto;
+            width: 280px;
+        }
+
         @media only screen and (max-width: 280px) {
 
-            body {
+            body,
+            p {
                 width: 95%;
             }
 
@@ -48,7 +54,24 @@
 </head>
 
 <body>
-    <h1>Page C</h1>
+    <h1>Hello, World!</h1>
+    <p>Welcome to my homepage.</p>
+    <a href="./a/a.html">page A</a><br>
+    <a href="./a/b/b.html">page B</a><br>
+    <a href="./c/c.html">page C</a><br>
+    <a href="./c/d/d.html">page D</a><br>
+    <h2>挪威山旅行</h2>
+
+    <img src="/img/1.jpg" alt="Big Boat">
+
+    <style>
+        body {
+            background: url("https://pic2.zhimg.com/80/v2-6aa6ad392aebd35ca3bceeebaabee92d_1440w.webp") no-repeat center center fixed;
+            -webkit-background-size: cover;
+            -o-background-size: cover;
+            background-size: cover;
+        }
+    </style>
 </body>
 
 </html>

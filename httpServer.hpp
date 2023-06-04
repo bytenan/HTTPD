@@ -79,41 +79,36 @@ class httpServer {
     if (suffix == ".jpg") return "application/x-jpg;image/jpeg";
     if (suffix == ".png") return "application/x-png;image/png";
     if (suffix == ".ico") return "application/x-ico;image/x-icon;";
+    if (suffix == ".js") return "application/x-javascript";
+    if (suffix == ".svg") return "text/xml";
+    if (suffix == ".css") return "text/css";
     return "text/html";
   }
 
-  static bool readFile(const std::string &url, std::string *output) {
-    *output = "";
-    std::ifstream in(url, std::ios::binary);
-    if (!in.is_open()) return false;
-    in.seekg(0, std::ios::end);
-    std::streampos fileSize = in.tellg();
-    in.seekg(0, std::ios::beg);
-    std::vector<char> buffer(fileSize);
-    in.read(buffer.data(), fileSize);
-    (*output) = buffer.data();
+  static bool readFile(const std::string &path, char *buf, int size) {
+    std::ifstream in(path, std::ios::in | std::ios::binary);
+    if (!in) {
+      std::cout << "readFile error" << std::endl;
+      return false;
+    }
+    in.read(buf, size);
     in.close();
     return true;
   }
 
   static void conversion(const Request &req, Response &resp) {
-    std::cout << "-----------------------" << std::endl;
-    std::cout << req.method << "---" << req.path << "---" << req.version
-              << "---" << req.url << "---" << req.suffix << std::endl;
-    //////////////////////////////////////////////////////////////////////////////////////
     resp.version = "HTTP/1.1";
     resp.status = "200";
     resp.reason = "OK";
     resp.headers = "Content-Type: " + getMIME(req.suffix) + sep;
-    if (!readFile(req.url, &resp.body)) {
-      readFile(page_404, &resp.body);
+    resp.headers += "Content-Length: " + std::to_string(req.size) + sep;
+
+    std::string buf;
+    buf.resize(req.size);
+    if (!readFile(req.path, (char *)buf.c_str(), req.size)) {
+      readFile(page_404, (char *)buf.c_str(), req.size);
     }
-    resp.headers += "Content-Length: " + std::to_string(resp.body.size()) + sep;
-    //////////////////////////////////////////////////////////////////////////////////////
-    std::cout << resp.version << "---" << resp.status << "---" << resp.reason
-              << "---" << resp.headers << "---" << resp.body.size()
-              << std::endl;
-    std::cout << "-----------------------" << std::endl;
+    resp.body = buf;
   }
 
  private:

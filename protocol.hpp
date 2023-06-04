@@ -1,4 +1,7 @@
 #pragma once
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -17,29 +20,30 @@ using Headers = std::multimap<std::string, std::string>;
 
 struct Request {
   std::string method;
-  std::string path;
+  std::string url;
   std::string version;
   Headers headers;
 
-  std::string url;
+  std::string path;
   std::string suffix;
+  int size;
   //   std::string blank;
   // std::string body;
 
   void Parse(const std::string &input) {
     std::vector<std::string> lines = splitHeaders(input);
     std::stringstream ss(lines[0]);
-    ss >> method >> path >> version;
+    ss >> method >> url >> version;
 
     for (int i = 1; i < lines.size(); ++i) {
       std::vector<std::string> parts = splitLine(lines[i]);
       headers.insert(std::make_pair(parts[0], parts[1]));
     }
 
-    if (path[path.size() - 1] == '/') {
-      url = page_home;
+    if (url[url.size() - 1] == '/') {
+      path = page_home;
     } else {
-      url = page_root + path;
+      path = page_root + url;
     }
 
     auto pos = path.rfind('.');
@@ -47,6 +51,16 @@ struct Request {
       suffix = ".html";
     } else {
       suffix = path.substr(pos);
+    }
+
+    struct stat st;
+    int n = stat(path.c_str(), &st);
+    if (!n) {
+      size = st.st_size;
+    } else {
+      struct stat st1;
+      stat(page_404.c_str(), &st1);
+      size = st1.st_size;
     }
   }
 };
