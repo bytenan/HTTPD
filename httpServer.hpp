@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 
+#include "conversion.hpp"
 #include "protocol.hpp"
 
 const int backlog = 5;
@@ -72,43 +73,6 @@ class httpServer {
     }
     close(sockfd);
     pthread_exit(nullptr);
-  }
-
-  static std::string getMIME(const std::string &suffix) {
-    if (suffix == ".html") return "text/html";
-    if (suffix == ".jpg") return "application/x-jpg;image/jpeg";
-    if (suffix == ".png") return "application/x-png;image/png";
-    if (suffix == ".ico") return "application/x-ico;image/x-icon;";
-    if (suffix == ".js") return "application/x-javascript";
-    if (suffix == ".svg") return "text/xml";
-    if (suffix == ".css") return "text/css";
-    return "text/html";
-  }
-
-  static bool readFile(const std::string &path, char *buf, int size) {
-    std::ifstream in(path, std::ios::in | std::ios::binary);
-    if (!in) {
-      std::cout << "readFile error" << std::endl;
-      return false;
-    }
-    in.read(buf, size);
-    in.close();
-    return true;
-  }
-
-  static void conversion(const Request &req, Response &resp) {
-    resp.version = "HTTP/1.1";
-    resp.status = "200";
-    resp.reason = "OK";
-    resp.headers = "Content-Type: " + getMIME(req.suffix) + sep;
-    resp.headers += "Content-Length: " + std::to_string(req.size) + sep;
-
-    std::string buf;
-    buf.resize(req.size);
-    if (!readFile(req.path, (char *)buf.c_str(), req.size)) {
-      readFile(page_404, (char *)buf.c_str(), req.size);
-    }
-    resp.body = buf;
   }
 
  private:
