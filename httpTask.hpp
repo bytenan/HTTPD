@@ -14,3 +14,20 @@ void conversion(const Request &req, Response &resp) {
   }
   resp.body = buf;
 }
+
+void httpTask(int sockfd) {
+  // 暂且认为能收到一个完整的http报文
+  char buf[4096];
+  ssize_t n = recv(sockfd, buf, sizeof(buf) - 1, 0);
+  if (n > 0) {
+    buf[n] = 0;
+    std::cout << buf << std::endl;
+    Request req;
+    req.Parse(buf);
+    Response resp;
+    conversion(req, resp);
+    std::string resp_str;
+    resp.Serialize(&resp_str);
+    send(sockfd, resp_str.c_str(), resp_str.size(), 0);
+  }
+}

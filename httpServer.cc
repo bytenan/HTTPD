@@ -17,7 +17,7 @@ int main(int argc, char *args[]) {
   }
   int port = atoi(args[1]);
   httpServer *svr = new httpServer(port);
-  svr->start();
+  svr->start(httpTask);
 
   return 0;
 }

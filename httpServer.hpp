@@ -6,13 +6,19 @@
 #include <unistd.h>
 
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <vector>
 
-#include "conversion.hpp"
+#include "httpTask.hpp"
 #include "protocol.hpp"
 
 const int backlog = 5;
+
+struct Context {
+  int sockfd;
+  std::function<void(int)> task;
+};
 
 class httpServer {
  public:
@@ -36,7 +42,7 @@ class httpServer {
       exit(-1);
     }
   }
-  void start() {
+  void start(std::function<void(int)> task) {
     while (true) {
       struct sockaddr_in remote_addr;
       socklen_t remote_addr_len = sizeof remote_addr;
@@ -47,7 +53,10 @@ class httpServer {
         continue;
       }
       pthread_t tid;
-      if (pthread_create(&tid, nullptr, start_routine, &sockfd)) {
+      Context *context = new Context;
+      context->sockfd = sockfd;
+      context->task = task;
+      if (pthread_create(&tid, nullptr, start_routine, context)) {
         std::cout << "pthread_create error" << std::endl;
       }
     }
@@ -56,21 +65,10 @@ class httpServer {
  private:
   static void *start_routine(void *args) {
     pthread_detach(pthread_self());
-    int sockfd = *(static_cast<int *>(args));
-    // 暂且认为能收到一个完整的http报文
-    char buf[4096];
-    ssize_t n = recv(sockfd, buf, sizeof(buf) - 1, 0);
-    if (n > 0) {
-      buf[n] = 0;
-      std::cout << buf << std::endl;
-      Request req;
-      req.Parse(buf);
-      Response resp;
-      conversion(req, resp);
-      std::string resp_str;
-      resp.Serialize(&resp_str);
-      send(sockfd, resp_str.c_str(), resp_str.size(), 0);
-    }
+    Context *context = static_cast<Context *>(args);
+    int sockfd = context->sockfd;
+    context->task(sockfd);
+    delete context;
     close(sockfd);
     pthread_exit(nullptr);
   }
